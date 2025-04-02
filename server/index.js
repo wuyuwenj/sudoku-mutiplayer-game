@@ -64,19 +64,23 @@ io.on('connection', (socket) => {
     if (!game) return;
 
     const isValid = validateMove(game.solution, row, col, value);
+    
     if (isValid) {
-      game.puzzle[row][col] = value;
-      game.scores.set(socket.id, game.scores.get(socket.id) + 1);
-      game.lastMove = { row, col, value, player: game.players.get(socket.id) };
-
-      io.to(gameId).emit('moveMade', {
-        row,
-        col,
-        value,
-        player: game.players.get(socket.id),
-        scores: Array.from(game.scores.entries())
-      });
+      game.puzzle[row][col] = value;  // Only update the board for valid moves
+      game.scores.set(socket.id, game.scores.get(socket.id) + 1);  // Add 1 point for correct move
+    } else {
+      game.scores.set(socket.id, game.scores.get(socket.id) - 1);  // Subtract 1 point for incorrect move
     }
+    
+    game.lastMove = { row, col, value, player: game.players.get(socket.id) };
+
+    io.to(gameId).emit('moveMade', {
+      row,
+      col,
+      value: isValid ? value : 0,  // Send 0 for invalid moves to clear the cell
+      player: game.players.get(socket.id),
+      scores: Array.from(game.scores.entries())
+    });
   });
 
   socket.on('disconnect', () => {
