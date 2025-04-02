@@ -49,7 +49,7 @@ const Game = () => {
   const [gameId, setGameId] = useState(null);
   const [puzzle, setPuzzle] = useState(null);
   const [selectedCell, setSelectedCell] = useState(null);
-  const [players, setPlayers] = useState([]);
+  const [players, setPlayers] = useState({});
   const [scores, setScores] = useState([]);
   const [playerName, setPlayerName] = useState('');
   const [lastMove, setLastMove] = useState(null);
@@ -74,13 +74,18 @@ const Game = () => {
       setScores(scores);
     });
 
+<<<<<<< HEAD
     socket.on('moveMade', ({ row, col, value, player, scores }) => {
       console.log('Move made:', { row, col, value, player });
+=======
+    socket.on('moveMade', ({ row, col, value, player, players, scores }) => {
+>>>>>>> d2810ad (fix_name_rendering)
       setPuzzle(prev => {
         const newPuzzle = [...prev];
         newPuzzle[row][col] = value;
         return newPuzzle;
       });
+      setPlayers(players);
       setScores(scores);
       setLastMove({ row, col, value, player });
     });
@@ -101,7 +106,11 @@ const Game = () => {
   }, []);
 
   const createGame = () => {
-    socket.emit('createGame');
+    if (!playerName.trim()) {
+      alert('Please enter your name');
+      return;
+    }
+    socket.emit('createGame', { playerName });
   };
 
   const joinGame = () => {
@@ -131,6 +140,15 @@ const Game = () => {
       <GameInfo>
         {!puzzle ? (
           <>
+            <div style={{ margin: '20px 0' }}>
+              <input
+                type="text"
+                placeholder="Enter your name"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                style={{ marginRight: '10px', padding: '8px' }}
+              />
+            </div>
             <Button onClick={createGame}>Create New Game</Button>
             <div style={{ margin: '20px 0' }}>
               <input
@@ -138,12 +156,7 @@ const Game = () => {
                 placeholder="Enter game ID"
                 value={gameId || ''}
                 onChange={(e) => setGameId(e.target.value)}
-              />
-              <input
-                type="text"
-                placeholder="Enter your name"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
+                style={{ marginRight: '10px', padding: '8px' }}
               />
               <Button onClick={joinGame}>Join Game</Button>
             </div>
@@ -163,11 +176,14 @@ const Game = () => {
             lastMove={lastMove}
           />
           <Scoreboard>
-            {scores.map(([playerId, score]) => (
-              <PlayerScore key={playerId}>
-                {players[playerId]}: {score}
-              </PlayerScore>
-            ))}
+            {scores.map(([playerId, score]) => {
+              console.log('Player ID:', playerId, 'Player Name:', players[playerId]);
+              return (
+                <PlayerScore key={playerId}>
+                  {players[playerId] || 'Unknown Player'}: {score}
+                </PlayerScore>
+              );
+            })}
           </Scoreboard>
         </>
       )}

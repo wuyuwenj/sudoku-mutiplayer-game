@@ -23,7 +23,12 @@ const games = new Map();
 io.on('connection', (socket) => {
   console.log('New client connected');
 
-  socket.on('createGame', () => {
+  socket.on('createGame', ({ playerName }) => {
+    if (!playerName) {
+      socket.emit('error', { message: 'Player name is required' });
+      return;
+    }
+    
     const gameId = Math.random().toString(36).substring(7);
     const { puzzle, solution } = generateSudoku();
     
@@ -35,8 +40,20 @@ io.on('connection', (socket) => {
       lastMove: null
     });
 
+    // Add the creator as the first player
+    const game = games.get(gameId);
+    game.players.set(socket.id, playerName);
+    game.scores.set(socket.id, 0);
+
     socket.join(gameId);
-    socket.emit('gameCreated', { gameId, puzzle });
+    
+    // Send the puzzle data to the joining player
+    socket.emit('gameCreated', { gameId, puzzle: game.puzzle });
+
+    io.to(gameId).emit('playerJoined', {
+      players: Object.fromEntries(game.players),
+      scores: Array.from(game.scores.entries())
+    });
   });
 
   socket.on('joinGame', ({ gameId, playerName }) => {
@@ -49,6 +66,9 @@ io.on('connection', (socket) => {
     game.players.set(socket.id, playerName);
     game.scores.set(socket.id, 0);
     socket.join(gameId);
+    
+    // Send the puzzle data to the joining player
+    socket.emit('gameCreated', { gameId, puzzle: game.puzzle });
 
     // Send the puzzle data to the joining player
     socket.emit('gameCreated', { gameId, puzzle: game.puzzle });
@@ -74,6 +94,8 @@ io.on('connection', (socket) => {
         col,
         value,
         player: game.players.get(socket.id),
+        playerName: game.players.get(socket.id),
+        players: Object.fromEntries(game.players),
         scores: Array.from(game.scores.entries())
       });
     }
@@ -85,7 +107,7 @@ io.on('connection', (socket) => {
         game.players.delete(socket.id);
         game.scores.delete(socket.id);
         io.to(gameId).emit('playerLeft', {
-          players: Array.from(game.players.values()),
+          players: Object.fromEntries(game.players),
           scores: Array.from(game.scores.entries())
         });
       }
