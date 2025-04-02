@@ -55,17 +55,27 @@ const Game = () => {
   const [lastMove, setLastMove] = useState(null);
 
   useEffect(() => {
+    console.log('Setting up socket listeners');
+    
+    socket.on('connect', () => {
+      console.log('Connected to server');
+    });
+    
     socket.on('gameCreated', ({ gameId, puzzle }) => {
+      console.log('Game created or joined:', gameId);
+      console.log('Received puzzle:', puzzle);
       setGameId(gameId);
       setPuzzle(puzzle);
     });
 
     socket.on('playerJoined', ({ players, scores }) => {
+      console.log('Player joined event:', { players, scores });
       setPlayers(players);
       setScores(scores);
     });
 
     socket.on('moveMade', ({ row, col, value, player, scores }) => {
+      console.log('Move made:', { row, col, value, player });
       setPuzzle(prev => {
         const newPuzzle = [...prev];
         newPuzzle[row][col] = value;
@@ -76,10 +86,13 @@ const Game = () => {
     });
 
     socket.on('error', ({ message }) => {
+      console.error('Socket error:', message);
       alert(message);
     });
 
     return () => {
+      console.log('Cleaning up socket listeners');
+      socket.off('connect');
       socket.off('gameCreated');
       socket.off('playerJoined');
       socket.off('moveMade');
@@ -96,6 +109,11 @@ const Game = () => {
       alert('Please enter your name');
       return;
     }
+    if (!gameId) {
+      alert('Please enter a game ID');
+      return;
+    }
+    console.log(`Attempting to join game with ID: ${gameId}, player name: ${playerName}`);
     socket.emit('joinGame', { gameId, playerName });
   };
 

@@ -50,8 +50,11 @@ io.on('connection', (socket) => {
     game.scores.set(socket.id, 0);
     socket.join(gameId);
 
+    // Send the puzzle data to the joining player
+    socket.emit('gameCreated', { gameId, puzzle: game.puzzle });
+
     io.to(gameId).emit('playerJoined', {
-      players: Array.from(game.players.values()),
+      players: Object.fromEntries(game.players),
       scores: Array.from(game.scores.entries())
     });
   });
