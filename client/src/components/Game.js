@@ -74,12 +74,8 @@ const Game = () => {
       setScores(scores);
     });
 
-<<<<<<< HEAD
-    socket.on('moveMade', ({ row, col, value, player, scores }) => {
-      console.log('Move made:', { row, col, value, player });
-=======
     socket.on('moveMade', ({ row, col, value, player, players, scores }) => {
->>>>>>> d2810ad (fix_name_rendering)
+      console.log('Move made:', { row, col, value, player });
       setPuzzle(prev => {
         const newPuzzle = [...prev];
         newPuzzle[row][col] = value;
@@ -89,6 +85,7 @@ const Game = () => {
       setScores(scores);
       setLastMove({ row, col, value, player });
     });
+
 
     socket.on('error', ({ message }) => {
       console.error('Socket error:', message);
